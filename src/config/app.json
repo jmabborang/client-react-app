@@ -1,0 +1,20 @@
+{
+  "appName": "IMS-Inventory Management System",
+  "env": {
+    "development": {
+      "port": 7777,
+      "apiBaseUrl": "http://localhost:3000/api",
+      "debug": true
+    },
+    "staging": {
+      "port": 8888,
+      "apiBaseUrl": "https://staging.example.com/api",
+      "debug": false
+    },
+    "production": {
+      "port": 9000,
+      "apiBaseUrl": "https://example.com/api",
+      "debug": false
+    }
+  }
+}
