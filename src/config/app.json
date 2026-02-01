@@ -3,17 +3,17 @@
   "env": {
     "development": {
       "port": 7777,
-      "apiBaseUrl": "http://localhost:3000/api",
+      "apiBaseUrl": "http://localhost:3000/",
       "debug": true
     },
     "staging": {
       "port": 8888,
-      "apiBaseUrl": "https://staging.example.com/api",
+      "apiBaseUrl": "https://staging.example.com/",
       "debug": false
     },
     "production": {
       "port": 9000,
-      "apiBaseUrl": "https://example.com/api",
+      "apiBaseUrl": "https://example.com/",
       "debug": false
     }
   }
