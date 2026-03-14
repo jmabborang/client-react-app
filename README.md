@@ -1,18 +1,64 @@
-# React + Vite
+# Client React Starter
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Reusable React starter built with Vite, organized using a feature-first layered architecture.
 
-Currently, two official plugins are available:
+## Run
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+```bash
+npm install
+npm run dev
+```
 
-## React Compiler
+## Architecture
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+```txt
+src/
+  app/
+    config/            # app-level constants and environment config
+    providers/         # root providers (router, state, theme, i18n)
+    router/            # route paths and router setup
+  pages/               # route-level pages (screen entry points)
+    home/
+    dashboard/
+    about/
+    not-found/
+  widgets/             # composition blocks (layout/header/nav)
+    layout/
+    navigation/
+  features/            # user-facing use cases (auth, checkout, search)
+  entities/            # business entities (user, product, order)
+  shared/
+    api/               # base API/http client
+    hooks/             # reusable hooks
+    lib/               # small pure utilities
+    styles/            # design tokens + global styles
+    ui/                # shared presentational UI components
+  App.jsx
+  main.jsx
+```
 
-Note: This will impact Vite dev & build performances.
+## Layer Dependency Rule
 
-## Expanding the ESLint configuration
+Use one-way dependencies:
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+`pages -> widgets -> features -> entities -> shared`
+
+Keep `shared` independent. Avoid importing "upward" across layers.
+
+## Starter Conventions
+
+- Add routes in `src/app/router/paths.js` and `src/app/router/router.jsx`.
+- Put route pages in `src/pages/<page-name>/index.jsx`.
+- Keep business logic in `features` and `entities`, not inside pages.
+- Keep reusable generic code in `shared`.
+- Use `shared/styles/tokens.css` for design variables.
+
+## Environment
+
+Optional env:
+
+```bash
+VITE_API_BASE_URL=http://localhost:3000
+```
+
+Used by `src/shared/api/httpClient.js`.
