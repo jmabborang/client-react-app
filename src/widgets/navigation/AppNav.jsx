@@ -7,12 +7,6 @@ function AppNav() {
       <NavLink to={paths.home} end className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>
         Home
       </NavLink>
-      <NavLink to={paths.dashboard} className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>
-        Dashboard
-      </NavLink>
-      <NavLink to={paths.about} className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>
-        About
-      </NavLink>
     </nav>
   )
 }
