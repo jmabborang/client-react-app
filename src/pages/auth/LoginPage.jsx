@@ -87,11 +87,7 @@ function LoginPage() {
       setApiMessage(responseData.message)
       console.log('Login response', responseData)
     } catch (error) {
-      if (error?.status === 401) {
-        setApiMessage('Invalid credentials.')
-      } else {
-        setApiMessage(error?.message || 'Unable to connect to Server. Please try again.')
-      }
+      setApiMessage(error?.message || 'Unable to connect to Server. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
