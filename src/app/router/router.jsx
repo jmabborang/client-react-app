@@ -1,5 +1,6 @@
 import { createBrowserRouter } from 'react-router-dom'
 import MainLayout from '../../widgets/layout/MainLayout'
+import LoginPage from '../../pages/auth/LoginPage'
 import { paths } from './paths'
 
 function EmptyState() {
@@ -12,6 +13,10 @@ function EmptyState() {
 }
 
 export const appRouter = createBrowserRouter([
+  {
+    path: paths.login,
+    element: <LoginPage />,
+  },
   {
     path: paths.home,
     element: <MainLayout />,
