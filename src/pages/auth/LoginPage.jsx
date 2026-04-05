@@ -53,6 +53,10 @@ function LoginPage() {
   const handleSubmit = async (event) => {
     event.preventDefault()
 
+    if (isSubmitting) {
+      return
+    }
+
     const validationErrors = validateForm(formValues)
     setErrors(validationErrors)
 
