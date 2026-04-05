@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom'
 import { appConfig } from '../../app/config/appConfig'
 import AppNav from '../navigation/AppNav'
+import GlobalLoader from '../../shared/ui/GlobalLoader'
 
 function MainLayout() {
   return (
@@ -16,6 +17,7 @@ function MainLayout() {
           <Outlet />
         </section>
       </main>
+      <GlobalLoader />
     </div>
   )
 }

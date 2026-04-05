@@ -1,21 +1,30 @@
 import { useState } from 'react'
 import Button from '../../shared/ui/Button'
+import { httpClient } from '../../shared/api/httpClient'
 import { generateUuid, getDeviceName, getIpAddress, getOrCreateDeviceId } from '../../shared/core/common'
 
 const MIN_USERNAME_LENGTH = 3
-const MIN_PASSWORD_LENGTH = 8
+const MIN_PASSWORD_LENGTH = 4
 
 function LoginPage() {
   const [formValues, setFormValues] = useState({
+    accountCode: '',
     username: '',
     password: '',
     remember: false,
   })
   const [errors, setErrors] = useState({})
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [apiMessage, setApiMessage] = useState('')
+  const [isApiSuccess, setIsApiSuccess] = useState(false)
 
   const validateForm = (values) => {
     const nextErrors = {}
+
+    if (!values.accountCode.trim()) {
+      nextErrors.accountCode = 'Account Code is required.'
+    }
 
     if (!values.username.trim()) {
       nextErrors.username = 'Username is required.'
@@ -56,21 +65,41 @@ function LoginPage() {
       return
     }
 
-    const ipAddress = await getIpAddress()
+    setApiMessage('')
+    setIsApiSuccess(false)
+    setIsSubmitting(true)
 
-    const loginPayload = {
-      Username: formValues.username.trim(),
-      Password: formValues.password,
-      IsRemember: formValues.remember,
-      DeviceId: getOrCreateDeviceId(),
-      DeviceName: getDeviceName(),
-      IPAddress: ipAddress,
-      ClientRequestId: generateUuid(),
+    try {
+      const ipAddress = await getIpAddress()
+
+      const loginPayload = {
+        AccountCode: formValues.accountCode.trim(),
+        Username: formValues.username.trim(),
+        Password: formValues.password,
+        IsRemember: formValues.remember,
+        DeviceId: getOrCreateDeviceId(),
+        DeviceName: getDeviceName(),
+        IPAddress: ipAddress,
+        ClientRequestId: generateUuid(),
+      }
+
+      const responseData = await httpClient.post('/api/v1/auth/login', loginPayload)
+
+      setIsApiSuccess(true)
+      setApiMessage(responseData.message || 'Login successful.')
+      console.log('Login response', responseData)
+    } catch (error) {
+      if (error?.status === 401) {
+        setApiMessage('Invalid credentials.')
+      } else {
+        setApiMessage(error?.message || 'Unable to connect to Server. Please try again.')
+      }
+    } finally {
+      setIsSubmitting(false)
     }
-
-    console.log('Test Login payload', loginPayload)
   }
 
+  const accountCodeError = errors.accountCode
   const usernameError = errors.username
   const passwordError = errors.password
 
@@ -85,6 +114,28 @@ function LoginPage() {
         {/* <p className="auth-subtitle">Use your company email and password to continue.</p> */}
         <br />
         <form className="auth-form" noValidate onSubmit={handleSubmit}>
+          <div className="auth-field">
+            <label className="auth-label" htmlFor="accountCode">
+              Account Code
+            </label>
+            <input
+              id="accountCode"
+              name="accountCode"
+              type="text"
+              value={formValues.accountCode}
+              onChange={handleChange}
+              className={`auth-input${accountCodeError ? ' auth-input-invalid' : ''}`}
+              placeholder="Enter your account code"
+              aria-invalid={Boolean(accountCodeError)}
+              aria-describedby={accountCodeError ? 'account-code-error' : undefined}
+            />
+            {accountCodeError ? (
+              <p id="account-code-error" className="auth-error" role="alert">
+                {accountCodeError}
+              </p>
+            ) : null}
+          </div>
+
           <div className="auth-field">
             <label className="auth-label" htmlFor="username">
               Username
@@ -171,17 +222,28 @@ function LoginPage() {
             </a>
           </div>
 
-          <Button type="submit" className="auth-submit">
-            Login
+
+          <Button type="submit" className="auth-submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Logging in...' : 'Login'}
           </Button>
+          
+          {apiMessage ? (
+            <p
+              className="auth-error"
+              role="status"
+              style={isApiSuccess ? { color: '#0f766e', textAlign: 'center' } : { textAlign: 'center' }}
+            >
+              {apiMessage}
+            </p>
+          ) : null}
         </form>
 
-        <p className="auth-footnote">
+        {/* <p className="auth-footnote">
           New here?{' '}
           <a href="#" className="auth-link">
             Create an account
           </a>
-        </p>
+        </p> */}
       </section>
     </div>
   )
