@@ -84,7 +84,7 @@ function LoginPage() {
       const responseData = await httpClient.post('/api/v1/auth/login', loginPayload)
 
       setIsApiSuccess(true)
-      setApiMessage(responseData.message || 'Login successful.')
+      setApiMessage(responseData.message)
       console.log('Login response', responseData)
     } catch (error) {
       if (error?.status === 401) {
