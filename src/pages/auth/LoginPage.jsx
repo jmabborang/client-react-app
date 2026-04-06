@@ -1,7 +1,7 @@
 import { useState } from 'react'
+import { useAppDispatch, useAppSelector } from '../../store/hooks'
+import { clearAuthFeedback, loginUser, selectAuthError, selectAuthStatus, selectAuthSuccessMessage } from '../../store/authSlice'
 import Button from '../../shared/ui/Button'
-import { httpClient } from '../../shared/api/httpClient'
-import { generateUuid, getDeviceName, getIpAddress, getOrCreateDeviceId } from '../../shared/core/common'
 
 const MIN_USERNAME_LENGTH = 3
 const MIN_PASSWORD_LENGTH = 4
@@ -12,11 +12,13 @@ function LoginPage() {
     password: '',
     remember: false,
   })
+  const dispatch = useAppDispatch()
   const [errors, setErrors] = useState({})
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [apiMessage, setApiMessage] = useState('')
-  const [isApiSuccess, setIsApiSuccess] = useState(false)
+  const authStatus = useAppSelector(selectAuthStatus)
+  const apiError = useAppSelector(selectAuthError)
+  const apiSuccessMessage = useAppSelector(selectAuthSuccessMessage)
+  const isSubmitting = authStatus === 'loading'
 
   const validateForm = (values) => {
     const nextErrors = {}
@@ -44,6 +46,9 @@ function LoginPage() {
     }
 
     setFormValues(nextValues)
+    if (apiError || apiSuccessMessage) {
+      dispatch(clearAuthFeedback())
+    }
 
     if (Object.keys(errors).length > 0) {
       setErrors(validateForm(nextValues))
@@ -64,32 +69,10 @@ function LoginPage() {
       return
     }
 
-    setApiMessage('')
-    setIsApiSuccess(false)
-    setIsSubmitting(true)
+    const action = await dispatch(loginUser(formValues))
 
-    try {
-      const ipAddress = await getIpAddress()
-
-      const loginPayload = {
-        Username: formValues.username.trim(),
-        Password: formValues.password,
-        IsRemember: formValues.remember,
-        DeviceId: getOrCreateDeviceId(),
-        DeviceName: getDeviceName(),
-        IPAddress: ipAddress,
-        ClientRequestId: generateUuid(),
-      }
-
-      const responseData = await httpClient.post('/api/v1/auth/login', loginPayload)
-
-      setIsApiSuccess(true)
-      setApiMessage(responseData.message)
-      console.log('Login response', responseData)
-    } catch (error) {
-      setApiMessage(error?.message || 'Unable to connect to Server. Please try again.')
-    } finally {
-      setIsSubmitting(false)
+    if (loginUser.fulfilled.match(action)) {
+      console.log('Login response', action.payload)
     }
   }
 
@@ -220,9 +203,9 @@ function LoginPage() {
               {isSubmitting ? 'Logging in...' : 'Login'}
             </Button>
 
-            {apiMessage ? (
-              <p className={`auth-status-message${isApiSuccess ? ' auth-status-success' : ''}`} role="status">
-                {apiMessage}
+            {apiError || apiSuccessMessage ? (
+              <p className={`auth-status-message${apiSuccessMessage ? ' auth-status-success' : ''}`} role="status">
+                {apiSuccessMessage || apiError}
               </p>
             ) : null}
           </form>

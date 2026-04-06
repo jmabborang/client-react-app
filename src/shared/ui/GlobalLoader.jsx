@@ -1,8 +1,8 @@
-import { useSyncExternalStore } from 'react'
-import { getIsApiLoading, subscribeApiLoading } from '../api/apiLoadingStore'
+import { useAppSelector } from '../../store/hooks'
+import { selectIsApiLoading } from '../../store/uiSlice'
 
 function GlobalLoader() {
-  const isLoading = useSyncExternalStore(subscribeApiLoading, getIsApiLoading, getIsApiLoading)
+  const isLoading = useAppSelector(selectIsApiLoading)
 
   if (!isLoading) {
     return null

@@ -1,5 +1,11 @@
 import { appConfig } from '../../app/config/appConfig'
-import { startApiLoading, stopApiLoading } from './apiLoadingStore'
+import { apiRequestFinished, apiRequestStarted } from '../../store/uiSlice'
+
+let storeDispatch = null
+
+export function setHttpClientStoreDispatch(dispatch) {
+  storeDispatch = dispatch
+}
 
 function withQueryParams(path, params) {
   if (!params || typeof params !== 'object') {
@@ -32,7 +38,7 @@ function withQueryParams(path, params) {
 }
 
 async function request(path, options = {}) {
-  startApiLoading()
+  storeDispatch?.(apiRequestStarted())
   try {
     const hasBody = options.body !== undefined
     const response = await fetch(`${appConfig.apiBaseUrl}${path}`, {
@@ -59,7 +65,7 @@ async function request(path, options = {}) {
 
     throw error
   } finally {
-    stopApiLoading()
+    storeDispatch?.(apiRequestFinished())
   }
 }
 
