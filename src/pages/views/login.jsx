@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { paths } from '../../app/router/paths'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { clearAuthFeedback, loginUser, selectAuthError, selectAuthStatus, selectAuthSuccessMessage } from '../../store/authSlice'
 import Button from '../../shared/ui/Button'
@@ -6,13 +8,14 @@ import Button from '../../shared/ui/Button'
 const MIN_USERNAME_LENGTH = 3
 const MIN_PASSWORD_LENGTH = 4
 
-function LoginPage() {
+function Login() {
   const [formValues, setFormValues] = useState({
     username: '',
     password: '',
     remember: false,
   })
   const dispatch = useAppDispatch()
+  const navigate = useNavigate()
   const [errors, setErrors] = useState({})
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
   const authStatus = useAppSelector(selectAuthStatus)
@@ -70,9 +73,9 @@ function LoginPage() {
     }
 
     const action = await dispatch(loginUser(formValues))
-
+    console.log('action: ', action)
     if (loginUser.fulfilled.match(action)) {
-      console.log('Login response', action.payload)
+      navigate(paths.dashboard, { replace: true })
     }
   }
 
@@ -215,4 +218,4 @@ function LoginPage() {
   )
 }
 
-export default LoginPage
+export default Login

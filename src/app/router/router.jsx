@@ -1,16 +1,8 @@
-import { createBrowserRouter } from 'react-router-dom'
-import MainLayout from '../../widgets/layout/MainLayout'
-import LoginPage from '../../pages/auth/LoginPage'
+import { Navigate, createBrowserRouter } from 'react-router-dom'
+import Application from '../core/application'
+import { applicationMenus } from '../../pages/menu'
+import LoginPage from '../../pages/views/login'
 import { paths } from './paths'
-
-function EmptyState() {
-  return (
-    <section className="page-content">
-      <h2>No Pages</h2>
-      <p>All pages were removed from this project.</p>
-    </section>
-  )
-}
 
 export const appRouter = createBrowserRouter([
   {
@@ -19,9 +11,13 @@ export const appRouter = createBrowserRouter([
   },
   {
     path: paths.home,
-    element: <MainLayout />,
+    element: <Application />,
     children: [
-      { index: true, element: <EmptyState /> },
+      { index: true, element: <Navigate to={applicationMenus[0].path} replace /> },
+      ...applicationMenus.map((menu) => ({
+        path: menu.path,
+        element: menu.element,
+      })),
     ],
   },
 ])
