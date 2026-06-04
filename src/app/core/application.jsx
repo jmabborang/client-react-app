@@ -209,11 +209,11 @@ function Application() {
             ))}
           </nav>
 
-          <div className="app-sidebar-footer">
+          {/* <div className="app-sidebar-footer">
             <Button type="button" className="app-sidebar-logout" onClick={handleLogout}>
               Log out
             </Button>
-          </div>
+          </div> */}
         </aside>
 
         <main className="app-main-shell">
