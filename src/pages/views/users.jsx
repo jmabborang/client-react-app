@@ -1,10 +1,5 @@
 import { useState, useEffect } from 'react'
-const userRows = [
-  { name: 'John Doe', role: 'Administrator', status: 'Active' },
-  { name: 'Maria Santos', role: 'Inventory Clerk', status: 'Active' },
-  { name: 'Kevin Cruz', role: 'Warehouse Staff', status: 'Pending' },
-  { name: 'Angela Reyes', role: 'Supervisor', status: 'Active' },
-]
+import Grid from '../../app/core/grid';
 
 function Users() {
   const [users, setUsers] = useState([]);
@@ -30,26 +25,18 @@ function Users() {
           <span>Latest records</span>
         </div>
 
-        <div className="users-table-wrap">
-          <table className="users-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Role</th>
-                <th>Email</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((user) => (
-                <tr key={user.id}>
-                  <td>{user.firstName} {user.lastName}</td>
-                  <td>{user.role}</td>
-                  <td>{user.email}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <Grid
+          columns={[
+            { field: 'id', header: 'Id', hide:true},
+            { field: 'username', header: 'username'},
+            { field: 'firstName', header: 'First Name'},
+            { field: 'lastName', header: 'Last Name'},
+            { field: 'gender', header: 'Gender'},
+            { field: 'email', header: 'Email'},
+            { field: 'age', header: 'Age'},
+          ]}
+          data={users}
+        />
       </section>
     </div>
   )

@@ -1,0 +1,74 @@
+.grid-wrapper {
+    font-family: Arial, sans-serif;
+}
+
+/* toolbar */
+.grid-toolbar {
+    margin-bottom: 10px;
+}
+
+.grid-toolbar button {
+    margin-right: 6px;
+    padding: 6px 10px;
+}
+
+/* SCROLL AREA (horizontal + vertical) */
+.grid-scroll {
+    overflow: auto;
+    border: 1px solid #ddd;
+}
+
+/* TABLE */
+.grid-table {
+    border-collapse: collapse;
+    min-width: 100%;
+}
+
+/* 📌 sticky header */
+.grid-table thead th {
+    position: sticky;
+    top: 0;
+    background: #f3f4f6;
+    z-index: 2;
+    border-bottom: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+}
+
+/* cells */
+.grid-table td {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    white-space: nowrap;
+}
+
+/* hover */
+.grid-table tr:hover {
+    background: #f9fafb;
+}
+
+/* header content */
+.th-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+}
+
+/* 🧠 resizer */
+.resizer {
+    width: 5px;
+    cursor: col-resize;
+    user-select: none;
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.grid-toolbar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+    align-items: center;
+}
