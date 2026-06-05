@@ -19,7 +19,7 @@ function Users() {
   
   return (
     <div className="dashboard-page">
-      <section className="dashboard-panel" aria-labelledby="users-table-title">
+      <section aria-labelledby="users-table-title">
         <div className="dashboard-panel-header">
           <h3 id="users-table-title">User list</h3>
           <span>Latest records</span>
@@ -28,7 +28,7 @@ function Users() {
         <Grid
           columns={[
             { field: 'id', header: 'Id', hide:true},
-            { field: 'username', header: 'username'},
+            { field: 'username', header: 'Username'},
             { field: 'firstName', header: 'First Name'},
             { field: 'lastName', header: 'Last Name'},
             { field: 'gender', header: 'Gender'},

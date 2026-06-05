@@ -212,7 +212,7 @@ function Application() {
           {/* <div className="app-sidebar-footer">
             <Button type="button" className="app-sidebar-logout" onClick={handleLogout}>
               Log out
-            </Button>
+            </Button> 
           </div> */}
         </aside>
 
