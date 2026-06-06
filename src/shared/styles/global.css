@@ -1,3 +1,8 @@
+html,
+body {
+  min-height: 100dvh;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -15,13 +20,24 @@ a {
 }
 
 #root {
-  min-height: 100vh;
+  min-height: 100dvh;
+  height: 100dvh;
+}
+
+.app-layout {
+  min-height: 100dvh;
+  height: 100dvh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  overflow: hidden;
 }
 
 .app-shell {
-  min-height: 100vh;
+  min-height: 0;
+  height: 100%;
   display: grid;
   grid-template-columns: minmax(260px, 292px) minmax(0, 1fr);
+  overflow: hidden;
   background:
     radial-gradient(circle at top left, rgba(15, 118, 110, 0.14), transparent 22%),
     linear-gradient(160deg, #edf2f4 0%, #d9e2e8 100%);
@@ -296,17 +312,19 @@ a {
 }
 
 .app-main-shell {
+  align-self: start;
   min-width: 0;
-  display: grid;
-  align-content: start;
-  gap: var(--space-5);
-  padding: 18px 27px 27px;
+  display: block;
+  min-height: 0;
+  padding: 10px 10px 0 10px;
+  overflow: visible;
 }
 
 .app-main-header {
   display: grid;
   gap: 8px;
   min-width: 0;
+  margin-bottom: var(--space-5);
 }
 
 .app-main-kicker {
@@ -448,10 +466,11 @@ a {
 
 .app-main-card {
   min-width: 0;
-  background: rgba(255, 255, 255, 0.82);
-  border: 1px solid rgba(255, 255, 255, 0.9);
-  border-radius: 10px;
-  padding: clamp(10px, 1.25vw, 20px);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-self: start;
+  overflow: hidden;
   backdrop-filter: blur(18px);
   box-shadow: 0 22px 45px rgba(15, 23, 42, 0.08);
 }
@@ -929,6 +948,12 @@ a {
 .dashboard-page {
   display: grid;
   gap: var(--space-6);
+  min-height: 0;
+}
+
+.dashboard-page-section {
+  display: block;
+  min-height: 0;
 }
 
 .dashboard-hero {

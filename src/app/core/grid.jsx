@@ -5,7 +5,10 @@ import {
     FolderOpen,
     Pencil,
     Trash2,
-    Search
+    Search,
+    ArrowUpDown,
+    ChevronUp,
+    ChevronDown
 } from 'lucide-react';
 
 export default function Grid({
@@ -16,38 +19,113 @@ export default function Grid({
     onOpen,
     onEdit,
     onDelete,
-    height = 400
+    onSelectionChange,
+    height = 420,
+    minHeight,
+    maxHeight,
+    fillHeight = false,
+    rowKey = 'id',
+    loading = false,
+    searchable = true,
+    searchPlaceholder = 'Search...',
+    emptyMessage = 'No records found'
 }) {
     const [colWidths, setColWidths] = useState({});
     const [search, setSearch] = useState('');
     const [selectedRows, setSelectedRows] = useState([]);
+    const [sortConfig, setSortConfig] = useState(null);
 
     const selectAllRef = useRef(null);
+    const resizeStateRef = useRef(null);
 
     const visibleColumns = useMemo(
         () => columns.filter(col => col?.hide !== true),
         [columns]
     );
 
+    const getRowId = (row, index) => {
+        if (typeof rowKey === 'function') {
+            return rowKey(row, index);
+        }
+
+        return row?.[rowKey] ?? index;
+    };
+
+    const normalizedSearch = search.trim().toLowerCase();
+
     const filteredData = useMemo(() => {
-        if (!search) return data;
+        if (!normalizedSearch) return data;
+
+        const fieldsToSearch = visibleColumns.map(col => col.field);
 
         return data.filter(row =>
-            Object.values(row).some(value =>
-                String(value)
+            fieldsToSearch.some(field =>
+                String(row?.[field] ?? '')
                     .toLowerCase()
-                    .includes(search.toLowerCase())
+                    .includes(normalizedSearch)
             )
         );
-    }, [data, search]);
+    }, [data, normalizedSearch, visibleColumns]);
+
+    const sortedData = useMemo(() => {
+        if (!sortConfig?.field) {
+            return filteredData;
+        }
+
+        const { field, direction } = sortConfig;
+        const column = columns.find(col => col.field === field);
+        const sortAccessor = column?.sortAccessor;
+
+        return [...filteredData].sort((leftRow, rightRow) => {
+            const leftValue = sortAccessor
+                ? sortAccessor(leftRow)
+                : leftRow?.[field];
+            const rightValue = sortAccessor
+                ? sortAccessor(rightRow)
+                : rightRow?.[field];
+
+            if (leftValue == null && rightValue == null) return 0;
+            if (leftValue == null) return 1;
+            if (rightValue == null) return -1;
+
+            if (
+                typeof leftValue === 'number' &&
+                typeof rightValue === 'number'
+            ) {
+                return direction === 'asc'
+                    ? leftValue - rightValue
+                    : rightValue - leftValue;
+            }
+
+            return direction === 'asc'
+                ? String(leftValue).localeCompare(String(rightValue), undefined, {
+                    numeric: true,
+                    sensitivity: 'base'
+                })
+                : String(rightValue).localeCompare(String(leftValue), undefined, {
+                    numeric: true,
+                    sensitivity: 'base'
+                });
+        });
+    }, [columns, filteredData, sortConfig]);
+
+    const visibleRowIds = useMemo(
+        () => sortedData.map((row, index) => getRowId(row, index)),
+        [sortedData]
+    );
+
+    const selectedData = useMemo(
+        () => sortedData.filter((row, index) => selectedRows.includes(getRowId(row, index))),
+        [sortedData, selectedRows]
+    );
 
     const allSelected =
-        filteredData.length > 0 &&
-        selectedRows.length === filteredData.length;
+        visibleRowIds.length > 0 &&
+        visibleRowIds.every(id => selectedRows.includes(id));
 
     const partiallySelected =
-        selectedRows.length > 0 &&
-        selectedRows.length < filteredData.length;
+        selectedData.length > 0 &&
+        !allSelected;
 
     useEffect(() => {
         if (selectAllRef.current) {
@@ -55,19 +133,42 @@ export default function Grid({
         }
     }, [partiallySelected]);
 
+    useEffect(() => {
+        setSelectedRows(prev =>
+            prev.filter(selectedId =>
+                data.some((row, index) => getRowId(row, index) === selectedId)
+            )
+        );
+    }, [data]);
+
+    useEffect(() => {
+        onSelectionChange?.(selectedData);
+    }, [onSelectionChange, selectedData]);
+
+    useEffect(() => () => {
+        if (resizeStateRef.current) {
+            document.removeEventListener('mousemove', resizeStateRef.current.onMove);
+            document.removeEventListener('mouseup', resizeStateRef.current.onUp);
+        }
+    }, []);
+
     const toggleSelectAll = () => {
         if (allSelected) {
-            setSelectedRows([]);
+            setSelectedRows(prev =>
+                prev.filter(id => !visibleRowIds.includes(id))
+            );
         } else {
-            setSelectedRows(filteredData.map((_, index) => index));
+            setSelectedRows(prev => [
+                ...new Set([...prev, ...visibleRowIds])
+            ]);
         }
     };
 
-    const toggleRow = (index) => {
+    const toggleRow = (rowId) => {
         setSelectedRows(prev =>
-            prev.includes(index)
-                ? prev.filter(i => i !== index)
-                : [...prev, index]
+            prev.includes(rowId)
+                ? prev.filter(id => id !== rowId)
+                : [...prev, rowId]
         );
     };
 
@@ -89,103 +190,128 @@ export default function Grid({
         const onUp = () => {
             document.removeEventListener('mousemove', onMove);
             document.removeEventListener('mouseup', onUp);
+            resizeStateRef.current = null;
         };
 
+        resizeStateRef.current = { onMove, onUp };
         document.addEventListener('mousemove', onMove);
         document.addEventListener('mouseup', onUp);
     };
 
+    const toggleSort = (field) => {
+        setSortConfig(prev => {
+            if (prev?.field !== field) {
+                return { field, direction: 'asc' };
+            }
+
+            if (prev.direction === 'asc') {
+                return { field, direction: 'desc' };
+            }
+
+            return null;
+        });
+    };
+
+    const getSortIcon = (field) => {
+        if (sortConfig?.field !== field) {
+            return <ArrowUpDown size={14} className="text-gray-400" />;
+        }
+
+        return sortConfig.direction === 'asc'
+            ? <ChevronUp size={14} className="text-blue-600" />
+            : <ChevronDown size={14} className="text-blue-600" />;
+    };
+
     const toolbarButton =
-        'flex items-center gap-2 px-3 py-2 rounded-md text-white text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
+        'flex h-6 items-center gap-2 px-3 rounded-sm border border-white/20 bg-white/12 text-white text-sm font-medium transition-colors hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white/12';
 
     return (
-        <div className="w-full space-y-3">
+        <div className={fillHeight ? 'w-full h-full flex flex-col min-h-0' : 'w-full'}>
 
             {/* TOOLBAR */}
-            <div className="flex flex-wrap gap-2 items-center">
+            <div
+                className="flex flex-wrap gap-2 items-center rounded-t-lg px-3 py-1.5 shadow-sm"
+                style={{ backgroundColor: '#2da3c4' }}
+            >
 
                 <button
-                    onClick={onAdd}
-                    className={`${toolbarButton} bg-blue-600 hover:bg-blue-700`}
+                    onClick={() => onAdd?.()}
+                    className={toolbarButton}
                 >
                     <Plus size={16} />
                     Add
                 </button>
 
                 <button
-                    onClick={onNew}
-                    className={`${toolbarButton} bg-indigo-600 hover:bg-indigo-700`}
+                    onClick={() => onNew?.()}
+                    className={toolbarButton}
                 >
                     <FilePlus size={16} />
                     New
                 </button>
 
                 <button
-                    onClick={() =>
-                        onOpen?.(
-                            selectedRows.map(index => filteredData[index])
-                        )
-                    }
-                    disabled={selectedRows.length === 0}
-                    className={`${toolbarButton} bg-emerald-600 hover:bg-emerald-700`}
+                    onClick={() => onOpen?.(selectedData)}
+                    className={toolbarButton}
                 >
                     <FolderOpen size={16} />
                     Open
                 </button>
 
                 <button
-                    onClick={() =>
-                        onEdit?.(
-                            selectedRows.map(index => filteredData[index])
-                        )
-                    }
-                    disabled={selectedRows.length === 0}
-                    className={`${toolbarButton} bg-amber-500 hover:bg-amber-600`}
+                    onClick={() => onEdit?.(selectedData)}
+                    className={toolbarButton}
                 >
                     <Pencil size={16} />
                     Edit
                 </button>
 
                 <button
-                    onClick={() =>
-                        onDelete?.(
-                            selectedRows.map(index => filteredData[index])
-                        )
-                    }
-                    disabled={selectedRows.length === 0}
-                    className={`${toolbarButton} bg-red-600 hover:bg-red-700`}
+                    onClick={() => onDelete?.(selectedData)}
+                    className={toolbarButton}
                 >
                     <Trash2 size={16} />
                     Delete
                 </button>
 
-                <div className="ml-auto relative">
-                    <Search
-                        size={16}
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                    />
+                {searchable && (
+                    <div className="ml-auto relative">
+                        <Search
+                            size={16}
+                            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                        />
 
-                    <input
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Search..."
-                        className="
-                            pl-9 pr-3 py-2
-                            border rounded-md
-                            w-64
-                            focus:outline-none
-                            focus:ring-2
-                            focus:ring-blue-400
-                        "
-                    />
-                </div>
+                        <input
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder={searchPlaceholder}
+                            className="
+                                h-6 pl-9 pr-1
+                                border border-white/40 rounded-sm
+                                bg-white
+                                w-64 max-w-full
+                                text-slate-700
+                                focus:outline-none
+                                focus:ring-cyan-200
+                            "
+                        />
+                    </div>
+                )}
 
             </div>
 
             {/* TABLE */}
             <div
-                className="border rounded overflow-auto"
-                style={{ height }}
+                className={fillHeight ? 'overflow-auto flex-1 min-h-0 bg-white' : 'overflow-auto bg-white'}
+                style={
+                    fillHeight
+                        ? undefined
+                        : {
+                            height,
+                            minHeight,
+                            maxHeight
+                        }
+                }
             >
                 <table className="min-w-full border-collapse">
 
@@ -193,7 +319,7 @@ export default function Grid({
                     <thead className="sticky top-0 bg-gray-100 z-10">
                         <tr>
 
-                            <th className="px-3 py-2 border-b w-12">
+                            <th className="h-[44px] w-12 px-3 py-1.5 text-center align-middle">
                                 <input
                                     ref={selectAllRef}
                                     type="checkbox"
@@ -205,13 +331,24 @@ export default function Grid({
                             {visibleColumns.map(col => (
                                 <th
                                     key={col.field}
-                                    className="text-left px-3 py-2 border-b font-semibold relative whitespace-nowrap bg-gray-100"
+                                    className="h-[10px] text-left px-3 py-1.5 font-semibold relative whitespace-nowrap bg-gray-100"
                                     style={{
-                                        width: colWidths[col.field] || 160
+                                        width: colWidths[col.field] || col.width || 160
                                     }}
                                 >
-                                    <div className="flex justify-between items-center">
-                                        <span>{col.header}</span>
+                                    <div className="flex justify-between items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => col.sortable !== false && toggleSort(col.field)}
+                                            className={`flex items-center gap-1 ${
+                                                col.sortable === false
+                                                    ? 'cursor-default'
+                                                    : 'cursor-pointer'
+                                            }`}
+                                        >
+                                            <span>{col.header}</span>
+                                            {col.sortable !== false && getSortIcon(col.field)}
+                                        </button>
 
                                         <span
                                             onMouseDown={(e) =>
@@ -226,42 +363,52 @@ export default function Grid({
                     </thead>
 
                     {/* BODY */}
-                    <tbody>
-                        {filteredData.length === 0 ? (
+                    <tbody className="bg-white">
+                        {loading ? (
                             <tr>
                                 <td
                                     colSpan={visibleColumns.length + 1}
-                                    className="text-center py-8 text-gray-500"
+                                    className="h-48 text-center py-8 text-gray-500"
                                 >
-                                    No records found
+                                    Loading records...
+                                </td>
+                            </tr>
+                        ) : sortedData.length === 0 ? (
+                            <tr>
+                                <td
+                                    colSpan={visibleColumns.length + 1}
+                                    className="h-48 text-center py-8 text-gray-500"
+                                >
+                                    {emptyMessage}
                                 </td>
                             </tr>
                         ) : (
-                            filteredData.map((row, index) => (
+                            sortedData.map((row, index) => {
+                                const rowId = getRowId(row, index);
+
+                                return (
                                 <tr
-                                    key={index}
-                                    onClick={() => toggleRow(index)}
+                                    key={rowId}
                                     className={`
-                                        border-b cursor-pointer
                                         hover:bg-gray-50
                                         ${
-                                            selectedRows.includes(index)
+                                            selectedRows.includes(rowId)
                                                 ? 'bg-blue-50'
                                                 : ''
                                         }
                                     `}
                                 >
                                     <td
-                                        className="px-3 py-2"
+                                        className="h-[11px] w-12 px-3 py-1.5 text-center align-middle"
                                         onClick={(e) =>
                                             e.stopPropagation()
                                         }
                                     >
                                         <input
                                             type="checkbox"
-                                            checked={selectedRows.includes(index)}
+                                            checked={selectedRows.includes(rowId)}
                                             onChange={() =>
-                                                toggleRow(index)
+                                                toggleRow(rowId)
                                             }
                                         />
                                     </td>
@@ -269,7 +416,10 @@ export default function Grid({
                                     {visibleColumns.map(col => (
                                         <td
                                             key={col.field}
-                                            className="px-3 py-2 whitespace-nowrap"
+                                            className="h-[11px] px-3 py-1.5 whitespace-nowrap"
+                                            style={{
+                                                width: colWidths[col.field] || col.width || 160
+                                            }}
                                         >
                                             {col.render
                                                 ? col.render(row)
@@ -277,7 +427,8 @@ export default function Grid({
                                         </td>
                                     ))}
                                 </tr>
-                            ))
+                                );
+                            })
                         )}
                     </tbody>
 
@@ -285,13 +436,21 @@ export default function Grid({
             </div>
 
             {/* FOOTER */}
-            <div className="flex justify-between items-center text-sm text-gray-500">
-                <span>
-                    Records: {filteredData.length}
-                </span>
+            <div className="flex items-center justify-between border-t border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-500">
+                <div className="flex items-center gap-6">
+                    <span className="inline-flex items-center gap-2">
+                        <span className="text-slate-400">Records</span>
+                        <span className="font-semibold text-slate-700">{sortedData.length}</span>
+                    </span>
+                    <span className="inline-flex items-center gap-2">
+                        <span className="text-slate-400">Filtered</span>
+                        <span className="font-semibold text-slate-700">{filteredData.length}</span>
+                    </span>
+                </div>
 
-                <span>
-                    Selected: {selectedRows.length}
+                <span className="inline-flex items-center gap-2">
+                    <span className="text-slate-400">Selected</span>
+                    <span className="font-semibold text-slate-700">{selectedData.length}</span>
                 </span>
             </div>
 

@@ -119,7 +119,7 @@ function Application() {
   }
 
   return (
-    <>
+    <div className="app-layout">
       <div className="app-topbar">
         <div className="app-topbar-content">
           <div className="app-topbar-copy">
@@ -227,7 +227,7 @@ function Application() {
           </section>
         </main>
       </div>
-    </>
+    </div>
   )
 }
 

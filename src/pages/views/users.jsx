@@ -11,21 +11,24 @@ function Users() {
       .then((data) => {
         console.log('this is the data: ', data);
         setUsers(data.users);
+        setLoading(false);
       })
       .catch((error) => {
         console.error("Error fetching users:", error);
+        setLoading(false);
       });
   }, []);
   
   return (
     <div className="dashboard-page">
-      <section aria-labelledby="users-table-title">
-        <div className="dashboard-panel-header">
-          <h3 id="users-table-title">User list</h3>
-          <span>Latest records</span>
-        </div>
-
+      <section
+        aria-labelledby="users-table-title"
+        className="dashboard-page-section"
+      >
         <Grid
+          height="calc(100dvh - 220px)"
+          data={users}
+          loading={loading}
           columns={[
             { field: 'id', header: 'Id', hide:true},
             { field: 'username', header: 'Username'},
@@ -35,7 +38,6 @@ function Users() {
             { field: 'email', header: 'Email'},
             { field: 'age', header: 'Age'},
           ]}
-          data={users}
         />
       </section>
     </div>
