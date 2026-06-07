@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { LogOut, Moon, PanelLeftClose, PanelLeftOpen, Search, Sun } from 'lucide-react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { logout, selectCurrentUser } from '../../store/authSlice'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
@@ -71,16 +72,32 @@ function getModuleBreadcrumb(pathname) {
   return ['Home', ...segments.map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))].join(' / ')
 }
 
+function getMenusByGroup() {
+  return applicationMenus.reduce((groups, menu) => {
+    const groupName = menu.group || 'Menu'
+
+    if (!groups[groupName]) {
+      groups[groupName] = []
+    }
+
+    groups[groupName].push(menu)
+    return groups
+  }, {})
+}
+
 function Application() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const location = useLocation()
   const currentUser = useAppSelector(selectCurrentUser)
-  const activeMenu = getActiveMenu(location.pathname)
   const moduleBreadcrumb = getModuleBreadcrumb(location.pathname)
   const userProfileImage = getUserProfileImage(currentUser)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const [sidebarQuery, setSidebarQuery] = useState('')
   const userMenuRef = useRef(null)
+  const sidebarGroups = getMenusByGroup()
+  const normalizedSidebarQuery = sidebarQuery.trim().toLowerCase()
 
   useEffect(() => {
     if (!isUserMenuOpen) {
@@ -117,6 +134,19 @@ function Application() {
     setIsUserMenuOpen(false)
     navigate(paths.settings)
   }
+
+  const filteredSidebarGroups = Object.entries(sidebarGroups)
+    .map(([groupName, menus]) => ({
+      groupName,
+      menus: menus.filter((menu) => {
+        if (!normalizedSidebarQuery) {
+          return true
+        }
+
+        return menu.label.toLowerCase().includes(normalizedSidebarQuery)
+      }),
+    }))
+    .filter(({ menus }) => menus.length > 0)
 
   return (
     <div className="app-layout">
@@ -178,42 +208,69 @@ function Application() {
           </div>
         </div>
       </div>
-      <div className="app-shell">
-        <aside className="app-sidebar">
-          <nav className="app-nav" aria-label="Main navigation">
-            {applicationMenus.map((menu) => (
-              <NavLink
-                key={menu.key}
-                to={menu.path}
-                className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-                onClick={(event) => {
-                  if (isMenuActive(location.pathname, menu.path)) {
-                    event.preventDefault()
-                  }
-                }}
-              >
-                <span className="nav-link-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" width="18" height="18">
-                    <path
-                      d={menu.iconPath}
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </span>
-                <span>{menu.label}</span>
-              </NavLink>
-            ))}
-          </nav>
+      <div className={`app-shell ${isSidebarCollapsed ? 'app-shell-sidebar-collapsed' : ''}`}>
+        <aside className={`app-sidebar ${isSidebarCollapsed ? 'collapsed' : ''}`}>
+     
+          <div className="app-sidebar-branding">
+            <button
+              type="button"
+              className="app-sidebar-collapse"
+              onClick={() => setIsSidebarCollapsed((value) => !value)}
+              aria-label={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              {isSidebarCollapsed ? <PanelLeftOpen size={13} strokeWidth={2.2} /> : <PanelLeftClose size={13} strokeWidth={2.2} />}
+            </button>
+          </div>
 
-          {/* <div className="app-sidebar-footer">
-            <Button type="button" className="app-sidebar-logout" onClick={handleLogout}>
-              Log out
-            </Button> 
-          </div> */}
+          <label className="app-sidebar-search">
+            <span className="app-sidebar-search-icon" aria-hidden="true">
+              <Search size={14} strokeWidth={2} />
+            </span>
+            <input
+              type="search"
+              value={sidebarQuery}
+              onChange={(event) => setSidebarQuery(event.target.value)}
+              placeholder={isSidebarCollapsed ? '' : 'Search...'}
+              aria-label="Search navigation"
+            />
+          </label>
+
+          <div className="app-sidebar-sections">
+            {filteredSidebarGroups.map(({ groupName, menus }) => (
+              <div key={groupName} className="app-sidebar-section">
+                {isSidebarCollapsed ? null : <p className="app-sidebar-section-title">{groupName}</p>}
+
+                <nav className="app-nav" aria-label={groupName}>
+                  {menus.map((menu) => (
+                    <NavLink
+                      key={menu.key}
+                      to={menu.path}
+                      className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                      onClick={(event) => {
+                        if (isMenuActive(location.pathname, menu.path)) {
+                          event.preventDefault()
+                        }
+                      }}
+                    >
+                      <span className="nav-link-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="18" height="18">
+                          <path
+                            d={menu.iconPath}
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.8"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </span>
+                      <span className="nav-link-label">{menu.label}</span>
+                    </NavLink>
+                  ))}
+                </nav>
+              </div>
+            ))}
+          </div>
         </aside>
 
         <main className="app-main-shell">

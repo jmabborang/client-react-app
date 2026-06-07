@@ -218,20 +218,22 @@ export default function Grid({
         }
 
         return sortConfig.direction === 'asc'
-            ? <ChevronUp size={14} className="text-blue-600" />
-            : <ChevronDown size={14} className="text-blue-600" />;
+            ? <ChevronUp size={14} className="text-teal-700" />
+            : <ChevronDown size={14} className="text-teal-700" />;
     };
 
     const toolbarButton =
-        'flex h-6 items-center gap-2 px-3 rounded-sm border border-white/20 bg-white/12 text-white text-sm font-medium transition-colors hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white/12';
+        'flex h-7 items-center gap-2 px-3 rounded-md border border-white/55 bg-white/46 text-teal-900 text-sm font-medium transition-colors hover:bg-white/72 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white/46';
 
     return (
         <div className={fillHeight ? 'w-full h-full flex flex-col min-h-0' : 'w-full'}>
 
             {/* TOOLBAR */}
             <div
-                className="flex flex-wrap gap-2 items-center rounded-t-lg px-3 py-1.5 shadow-sm"
-                style={{ backgroundColor: '#2da3c4' }}
+                className="flex flex-wrap gap-2 items-center rounded-t-lg border border-slate-200 border-b-0 px-3 py-2 shadow-sm"
+                style={{
+                    background: '#0cc3cc'
+                }}
             >
 
                 <button
@@ -286,13 +288,14 @@ export default function Grid({
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder={searchPlaceholder}
                             className="
-                                h-6 pl-9 pr-1
-                                border border-white/40 rounded-sm
+                                h-7 pl-9 pr-2
+                                border border-slate-200 rounded-md
                                 bg-white
                                 w-64 max-w-full
                                 text-slate-700
                                 focus:outline-none
-                                focus:ring-cyan-200
+                                focus:ring-2
+                                focus:ring-emerald-100
                             "
                         />
                     </div>
@@ -302,7 +305,7 @@ export default function Grid({
 
             {/* TABLE */}
             <div
-                className={fillHeight ? 'overflow-auto flex-1 min-h-0 bg-white' : 'overflow-auto bg-white'}
+                className={fillHeight ? 'overflow-auto flex-1 min-h-0 rounded-b-lg border border-slate-200 border-t-0 bg-white' : 'overflow-auto rounded-b-lg border border-slate-200 border-t-0 bg-white'}
                 style={
                     fillHeight
                         ? undefined
@@ -316,10 +319,10 @@ export default function Grid({
                 <table className="min-w-full border-collapse">
 
                     {/* HEADER */}
-                    <thead className="sticky top-0 bg-gray-100 z-10">
+                    <thead className="sticky top-0 z-10 bg-slate-50">
                         <tr>
 
-                            <th className="h-[44px] w-12 px-3 py-1.5 text-center align-middle">
+                            <th className="h-[44px] w-12 border-b border-slate-200 px-3 py-1.5 text-center align-middle">
                                 <input
                                     ref={selectAllRef}
                                     type="checkbox"
@@ -331,7 +334,7 @@ export default function Grid({
                             {visibleColumns.map(col => (
                                 <th
                                     key={col.field}
-                                    className="h-[10px] text-left px-3 py-1.5 font-semibold relative whitespace-nowrap bg-gray-100"
+                                    className="relative h-[10px] whitespace-nowrap border-b border-slate-200 bg-slate-50 px-3 py-1.5 text-left font-semibold text-slate-700"
                                     style={{
                                         width: colWidths[col.field] || col.width || 160
                                     }}
@@ -368,7 +371,7 @@ export default function Grid({
                             <tr>
                                 <td
                                     colSpan={visibleColumns.length + 1}
-                                    className="h-48 text-center py-8 text-gray-500"
+                                    className="h-48 py-8 text-center text-slate-500"
                                 >
                                     Loading records...
                                 </td>
@@ -377,7 +380,7 @@ export default function Grid({
                             <tr>
                                 <td
                                     colSpan={visibleColumns.length + 1}
-                                    className="h-48 text-center py-8 text-gray-500"
+                                    className="h-48 py-8 text-center text-slate-500"
                                 >
                                     {emptyMessage}
                                 </td>
@@ -390,16 +393,16 @@ export default function Grid({
                                 <tr
                                     key={rowId}
                                     className={`
-                                        hover:bg-gray-50
+                                        border-b border-slate-100 hover:bg-slate-50
                                         ${
                                             selectedRows.includes(rowId)
-                                                ? 'bg-blue-50'
+                                                ? 'bg-emerald-50'
                                                 : ''
                                         }
                                     `}
                                 >
                                     <td
-                                        className="h-[11px] w-12 px-3 py-1.5 text-center align-middle"
+                                        className="h-[11px] w-12 px-3 py-1.5 text-center align-middle text-slate-700"
                                         onClick={(e) =>
                                             e.stopPropagation()
                                         }
@@ -416,7 +419,7 @@ export default function Grid({
                                     {visibleColumns.map(col => (
                                         <td
                                             key={col.field}
-                                            className="h-[11px] px-3 py-1.5 whitespace-nowrap"
+                                            className="h-[11px] whitespace-nowrap px-3 py-1.5 text-slate-700"
                                             style={{
                                                 width: colWidths[col.field] || col.width || 160
                                             }}
@@ -436,21 +439,21 @@ export default function Grid({
             </div>
 
             {/* FOOTER */}
-            <div className="flex items-center justify-between border-t border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-500">
+            <div className="flex items-center justify-between border-x border-b border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-500">
                 <div className="flex items-center gap-6">
                     <span className="inline-flex items-center gap-2">
-                        <span className="text-slate-400">Records</span>
-                        <span className="font-semibold text-slate-700">{sortedData.length}</span>
+                        <span className="text-slate-500">Records</span>
+                        <span className="font-semibold text-teal-700">{sortedData.length}</span>
                     </span>
                     <span className="inline-flex items-center gap-2">
-                        <span className="text-slate-400">Filtered</span>
-                        <span className="font-semibold text-slate-700">{filteredData.length}</span>
+                        <span className="text-slate-500">Filtered</span>
+                        <span className="font-semibold text-teal-700">{filteredData.length}</span>
                     </span>
                 </div>
 
                 <span className="inline-flex items-center gap-2">
-                    <span className="text-slate-400">Selected</span>
-                    <span className="font-semibold text-slate-700">{selectedData.length}</span>
+                    <span className="text-slate-500">Selected</span>
+                    <span className="font-semibold text-teal-700">{selectedData.length}</span>
                 </span>
             </div>
 
