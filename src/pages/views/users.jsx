@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Grid from '../../app/core/grid';
 import ParameterInput from '../../app/core/parameter-input';
+import '../../shared/styles/users.css';
 
 function Users() {
   const [users, setUsers] = useState([]);
@@ -9,6 +10,14 @@ function Users() {
   const [gender, setGender] = useState('');
   const [department, setDepartment] = useState('');
   const [position, setPosition] = useState('');
+  const [isApplyingFilters, setIsApplyingFilters] = useState(false);
+  const [appliedFilters, setAppliedFilters] = useState({
+    username: '',
+    gender: '',
+    department: '',
+    position: '',
+  });
+  const applyFiltersTimeoutRef = useRef(null);
 
   useEffect(() => {
     fetch("https://dummyjson.com/users")
@@ -22,6 +31,12 @@ function Users() {
         console.error("Error fetching users:", error);
         setLoading(false);
       });
+  }, []);
+
+  useEffect(() => () => {
+    if (applyFiltersTimeoutRef.current) {
+      window.clearTimeout(applyFiltersTimeoutRef.current);
+    }
   }, []);
 
   const genderOptions = useMemo(() => {
@@ -59,25 +74,52 @@ function Users() {
   }, [users]);
 
   const filteredUsers = useMemo(() => {
-    const normalizedUsername = username.trim().toLowerCase();
+    const normalizedUsername = appliedFilters.username.trim().toLowerCase();
 
     return users.filter((user) => {
       const matchesUsername =
         !normalizedUsername ||
         String(user?.username ?? '').toLowerCase().includes(normalizedUsername);
-      const matchesGender = !gender || user?.gender === gender;
-      const matchesDepartment = !department || user?.company?.department === department;
-      const matchesPosition = !position || user?.company?.title === position;
+      const matchesGender = !appliedFilters.gender || user?.gender === appliedFilters.gender;
+      const matchesDepartment =
+        !appliedFilters.department || user?.company?.department === appliedFilters.department;
+      const matchesPosition =
+        !appliedFilters.position || user?.company?.title === appliedFilters.position;
 
       return matchesUsername && matchesGender && matchesDepartment && matchesPosition;
     });
-  }, [users, username, gender, department, position]);
+  }, [users, appliedFilters]);
+
+  const handleApplyFilters = () => {
+    setIsApplyingFilters(true);
+
+    if (applyFiltersTimeoutRef.current) {
+      window.clearTimeout(applyFiltersTimeoutRef.current);
+    }
+
+    applyFiltersTimeoutRef.current = window.setTimeout(() => {
+      setAppliedFilters({
+        username,
+        gender,
+        department,
+        position,
+      });
+      setIsApplyingFilters(false);
+      applyFiltersTimeoutRef.current = null;
+    }, 200);
+  };
 
   const handleReset = () => {
     setUsername('');
     setGender('');
     setDepartment('');
     setPosition('');
+    setAppliedFilters({
+      username: '',
+      gender: '',
+      department: '',
+      position: '',
+    });
   };
   
   return (
@@ -102,13 +144,6 @@ function Users() {
             options={genderOptions}
           />
 
-          <button
-            type="button"
-            className="users-parameter-button users-parameter-button-reset"
-            onClick={handleReset}
-          >
-            Reset
-          </button>
         </div>
 
         <div className="users-parameter-bar users-parameter-bar-compact">
@@ -130,12 +165,26 @@ function Users() {
             options={positionOptions}
           />
 
+        </div>
+
+        <div className="users-parameter-bar users-parameter-bar-compact">
+          <button
+            type="button"
+            className="users-parameter-button users-parameter-button-reset"
+            onClick={handleReset}
+          >
+            Reset
+          </button>
+
           <button
             type="button"
             className="users-parameter-button"
+            onClick={handleApplyFilters}
+            disabled={isApplyingFilters}
           >
-            Go
+            {isApplyingFilters ? 'Applying...' : 'Go'}
           </button>
+          
         </div>
       </section>
 
@@ -146,7 +195,7 @@ function Users() {
         <Grid
           fillHeight
           data={filteredUsers}
-          loading={loading}
+          loading={loading || isApplyingFilters}
           columns={[
             { field: 'id', header: 'Id', hide:true},
             { field: 'username', header: 'Username'},
