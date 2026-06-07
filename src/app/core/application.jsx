@@ -222,7 +222,7 @@ function Application() {
             {/* <h2 className="app-main-title">{activeMenu.title}</h2> */}
           </div>
 
-          <section className="app-main-card">
+          <section className="app-main-card app-main-card-fill">
             <Outlet />
           </section>
         </main>
