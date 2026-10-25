@@ -84,6 +84,8 @@ This file manages login/session state.
 It stores:
 
 - `user`
+- `remembered`
+- `idleDeadline` or `rotationDeadline`
 - `status`
 - `error`
 - `successMessage`
@@ -106,6 +108,14 @@ It restores the user on success and clears user state on a 401 response.
 The API stores the session and sets an `HttpOnly` cookie. The client keeps only
 the CSRF token in memory. A refresh calls `/api/v1/auth/me` to restore user
 details and the CSRF token. Older `client-react-app.auth` storage is deleted.
+`SessionActivityManager` sends activity updates no more than once every 30
+seconds for unchecked sessions and
+refreshes remembered sessions when their five-minute token rotation is due. It
+also checks session status with `POST /api/v1/auth/heartbeat` every 30 seconds and
+when the tab becomes visible. A 401 clears authentication and returns to login;
+this status check never extends the idle deadline.
+When the idle deadline passes, it sends one `POST /api/v1/auth/idle_expire` to
+delete the expired cookie session or learn its newer deadline.
 
 ## UI Loading Flow
 

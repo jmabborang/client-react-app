@@ -52,9 +52,10 @@ function withQueryParams(path, params) {
 }
 
 async function request(path, options = {}) {
-  storeDispatch?.(apiRequestStarted())
+  const trackRequest = !options.silent
+  if (trackRequest) storeDispatch?.(apiRequestStarted())
   try {
-    const { headers: customHeaders, ...fetchOptions } = options
+    const { headers: customHeaders, silent: _silent, ...fetchOptions } = options
     const hasBody = fetchOptions.body !== undefined
     const response = await fetch(`${appConfig.apiBaseUrl}${path}`, {
       ...fetchOptions,
@@ -89,11 +90,11 @@ async function request(path, options = {}) {
 
     throw error
   } finally {
-    storeDispatch?.(apiRequestFinished())
+    if (trackRequest) storeDispatch?.(apiRequestFinished())
   }
 }
 
 export const httpClient = {
   get: (path, params, options = {}) => request(withQueryParams(path, params), options),
-  post: (path, body) => request(path, { method: 'POST', body: JSON.stringify(body) }),
+  post: (path, body, options = {}) => request(path, { ...options, method: 'POST', body: JSON.stringify(body) }),
 }
