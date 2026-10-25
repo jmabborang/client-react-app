@@ -84,51 +84,28 @@ This file manages login/session state.
 It stores:
 
 - `user`
-- `token`
-- `tokenType`
-- `remember`
 - `status`
 - `error`
 - `successMessage`
 
 ### Async login
 
-`loginUser` is a Redux thunk:
-
-```js
-export const loginUser = createAsyncThunk('auth/loginUser', async (credentials, thunkApi) => {
-  ...
-})
-```
-
-It:
-
-1. prepares the payload
-2. calls the API
-3. returns success data
-4. or returns a rejected error message
+`signIn(credentials)` calls the API outside Redux so the password never appears
+in action metadata or Redux DevTools. The page dispatches `loginStarted`, then
+`loginSucceeded` with user details or `loginFailed` with an error message.
+`loadCurrentUser` is a thunk that calls `/api/v1/auth/me` when the app starts.
 
 ### State lifecycle
 
-Redux automatically dispatches these action types:
+Login actions set `status` to `loading`, `authenticated`, or `unauthenticated`.
+`loadCurrentUser` sets `status` to `checking` while the API verifies the cookie.
+It restores the user on success and clears user state on a 401 response.
 
-- `auth/loginUser/pending`
-- `auth/loginUser/fulfilled`
-- `auth/loginUser/rejected`
+### Browser session
 
-Handled in `extraReducers`:
-
-- `pending` -> `status = 'loading'`
-- `fulfilled` -> saves `user`, `token`, `successMessage`
-- `rejected` -> saves `error`
-
-### Local storage
-
-This slice also stores session data in:
-
-- `localStorage['client-react-app.auth']`
-
-That means refresh can preserve login data.
+The API stores the session and sets an `HttpOnly` cookie. The client keeps only
+the CSRF token in memory. A refresh calls `/api/v1/auth/me` to restore user
+details and the CSRF token. Older `client-react-app.auth` storage is deleted.
 
 ## UI Loading Flow
 
@@ -182,7 +159,7 @@ If `isLoading` is true, it renders the loader overlay.
 
 ## Login Page Flow
 
-### `src/pages/auth/LoginPage.jsx`
+### `src/pages/views/login.jsx`
 
 This page still keeps local UI form state:
 
@@ -200,17 +177,15 @@ It reads:
 - `selectAuthError`
 - `selectAuthSuccessMessage`
 
-It dispatches:
-
-- `loginUser(formValues)`
-- `clearAuthFeedback()`
+It calls `signIn(formValues)` and dispatches `loginStarted`, `loginSucceeded`
+or `loginFailed`. It also dispatches `clearAuthFeedback` when fields change.
 
 ### Flow summary
 
 1. user submits the form
 2. page validates inputs locally
-3. page dispatches `loginUser`
-4. thunk calls API
+3. page calls `signIn` without putting credentials in a Redux action
+4. API sets an `HttpOnly` session cookie
 5. Redux updates auth state
 6. UI re-renders from selectors
 
@@ -220,39 +195,22 @@ It dispatches:
 
 Check these files in order:
 
-1. `src/pages/auth/LoginPage.jsx`
+1. `src/pages/views/login.jsx`
 2. `src/store/authSlice.js`
 3. `src/shared/api/httpClient.js`
 
 Questions to ask:
 
-- Is `dispatch(loginUser(formValues))` being called?
-- Is the thunk building the correct payload?
-- Is the API returning success or error?
-- Did `fulfilled` or `rejected` run?
+- Is `signIn(formValues)` being called?
+- Does the API set the session cookie and return `user` and `csrf_token`?
+- Does `/api/v1/auth/me` restore the session after a refresh?
+- Did `loginSucceeded` or `loginFailed` run?
 
-### Useful manual logs
+### Safe debugging
 
-In `LoginPage.jsx`:
-
-```js
-const action = await dispatch(loginUser(formValues))
-console.log(action)
-```
-
-In `authSlice.js` inside the thunk:
-
-```js
-console.log(payload)
-console.log(responseData)
-```
-
-In a component:
-
-```js
-const authState = useAppSelector((state) => state.auth)
-console.log(authState)
-```
+Check response status, cookie attributes, and the presence of `user` and
+`csrf_token` in browser developer tools. Do not log passwords, cookies, login
+actions, request payloads, or authentication responses.
 
 ### If loader is not showing
 
@@ -272,10 +230,10 @@ Questions:
 
 If Redux DevTools is enabled, a login request should usually show:
 
-1. `auth/loginUser/pending`
+1. `auth/loginStarted`
 2. `ui/apiRequestStarted`
 3. `ui/apiRequestFinished`
-4. `auth/loginUser/fulfilled` or `auth/loginUser/rejected`
+4. `auth/loginSucceeded` or `auth/loginFailed`
 
 ## Mental Model
 

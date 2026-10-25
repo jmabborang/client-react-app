@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { paths } from '../../app/router/paths'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
-import { clearAuthFeedback, loginUser, selectAuthError, selectAuthStatus, selectAuthSuccessMessage } from '../../store/authSlice'
+import { clearAuthFeedback, loginFailed, loginStarted, loginSucceeded, selectAuthError, selectAuthStatus, selectAuthSuccessMessage, signIn } from '../../store/authSlice'
 import Button from '../../shared/ui/Button'
 
 const MIN_USERNAME_LENGTH = 3
@@ -21,7 +21,7 @@ function Login() {
   const authStatus = useAppSelector(selectAuthStatus)
   const apiError = useAppSelector(selectAuthError)
   const apiSuccessMessage = useAppSelector(selectAuthSuccessMessage)
-  const isSubmitting = authStatus === 'loading'
+  const isSubmitting = authStatus === 'loading' || authStatus === 'checking'
 
   const validateForm = (values) => {
     const nextErrors = {}
@@ -72,10 +72,13 @@ function Login() {
       return
     }
 
-    const action = await dispatch(loginUser(formValues))
-    console.log('action: ', action)
-    if (loginUser.fulfilled.match(action)) {
+    dispatch(loginStarted())
+    try {
+      const result = await signIn(formValues)
+      dispatch(loginSucceeded(result))
       navigate(paths.dashboard, { replace: true })
+    } catch (error) {
+      dispatch(loginFailed(error?.message || 'Unable to sign in. Please try again.'))
     }
   }
 

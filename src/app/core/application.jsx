@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { LogOut, Moon, PanelLeftClose, PanelLeftOpen, Search, Sun } from 'lucide-react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { logout, selectCurrentUser } from '../../store/authSlice'
+import { logout, selectCurrentUser, signOut } from '../../store/authSlice'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import Button from '../../shared/ui/Button'
 import { applicationMenus } from '../../pages/menu'
@@ -93,6 +93,8 @@ function Application() {
   const moduleBreadcrumb = getModuleBreadcrumb(location.pathname)
   const userProfileImage = getUserProfileImage(currentUser)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const [logoutError, setLogoutError] = useState('')
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [sidebarQuery, setSidebarQuery] = useState('')
   const userMenuRef = useRef(null)
@@ -125,9 +127,19 @@ function Application() {
     }
   }, [isUserMenuOpen])
 
-  const handleLogout = () => {
-    dispatch(logout())
-    navigate(paths.login, { replace: true })
+  const handleLogout = async () => {
+    if (isLoggingOut) return
+    setIsLoggingOut(true)
+    setLogoutError('')
+    try {
+      await signOut()
+      dispatch(logout())
+      navigate(paths.login, { replace: true })
+    } catch (error) {
+      setLogoutError(error?.message || 'Unable to log out. Please try again.')
+    } finally {
+      setIsLoggingOut(false)
+    }
   }
 
   const handleProfileClick = () => {
@@ -199,10 +211,11 @@ function Application() {
                   <Button type="button" className="app-user-dropdown-profile-button" onClick={handleProfileClick}>
                     Profile
                   </Button>
-                  <Button type="button" className="app-user-dropdown-logout" onClick={handleLogout}>
-                    Log out
+                  <Button type="button" className="app-user-dropdown-logout" onClick={handleLogout} disabled={isLoggingOut}>
+                    {isLoggingOut ? 'Logging out...' : 'Log out'}
                   </Button>
                 </div>
+                {logoutError ? <p role="alert">{logoutError}</p> : null}
               </div>
             ) : null}
           </div>

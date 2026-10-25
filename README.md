@@ -62,3 +62,15 @@ VITE_API_BASE_URL=http://localhost:3000
 ```
 
 Used by `src/shared/api/httpClient.js`.
+
+## Authentication
+
+The API must provide cookie-based sessions: `POST /api/v1/auth/login` sets the
+session cookie and returns `{ user, csrf_token }`; `GET /api/v1/auth/me` returns
+the same fields; `POST /api/v1/auth/logout` revokes the session. The client sends
+cookies with API requests and adds `X-CSRF-Token` to state-changing requests after
+login or session restoration. It does not store access tokens in browser storage.
+
+For production, set `VITE_API_BASE_URL` to an HTTPS API origin on the same site as
+the frontend. Deploy the Rails API changes and database migration with this client;
+the previous bearer-token login response is not compatible with this version.

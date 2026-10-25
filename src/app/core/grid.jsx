@@ -1,7 +1,6 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import {
     Plus,
-    FilePlus,
     FolderOpen,
     Pencil,
     Trash2,
@@ -10,12 +9,13 @@ import {
     ChevronUp,
     ChevronDown
 } from 'lucide-react';
+import MasterForm from './master_form';
 
 export default function Grid({
     columns = [],
     data = [],
+    forms,
     onAdd,
-    onNew,
     onOpen,
     onEdit,
     onDelete,
@@ -34,6 +34,7 @@ export default function Grid({
     const [search, setSearch] = useState('');
     const [selectedRows, setSelectedRows] = useState([]);
     const [sortConfig, setSortConfig] = useState(null);
+    const [formState, setFormState] = useState(null);
 
     const selectAllRef = useRef(null);
     const resizeStateRef = useRef(null);
@@ -118,6 +119,7 @@ export default function Grid({
         () => sortedData.filter((row, index) => selectedRows.includes(getRowId(row, index))),
         [sortedData, selectedRows]
     );
+    const selectedRecord = selectedData[0] ?? null;
 
     const allSelected =
         visibleRowIds.length > 0 &&
@@ -151,6 +153,26 @@ export default function Grid({
             document.removeEventListener('mouseup', resizeStateRef.current.onUp);
         }
     }, []);
+
+    const closeForm = () => {
+        setFormState(null);
+    };
+
+    const openForm = (mode) => {
+        setFormState({
+            mode,
+            selectedRecord,
+            selectedRecords: selectedData
+        });
+    };
+
+    const handleToolbarAction = (mode, callback) => {
+        callback?.(selectedData);
+
+        if (forms) {
+            openForm(mode);
+        }
+    };
 
     const toggleSelectAll = () => {
         if (allSelected) {
@@ -237,7 +259,7 @@ export default function Grid({
             >
 
                 <button
-                    onClick={() => onAdd?.()}
+                    onClick={() => handleToolbarAction('add', onAdd)}
                     className={toolbarButton}
                 >
                     <Plus size={16} />
@@ -245,24 +267,18 @@ export default function Grid({
                 </button>
 
                 <button
-                    onClick={() => onNew?.()}
+                    onClick={() => handleToolbarAction('open', onOpen)}
                     className={toolbarButton}
-                >
-                    <FilePlus size={16} />
-                    New
-                </button>
-
-                <button
-                    onClick={() => onOpen?.(selectedData)}
-                    className={toolbarButton}
+                    disabled={selectedData.length === 0 && !!forms}
                 >
                     <FolderOpen size={16} />
                     Open
                 </button>
 
                 <button
-                    onClick={() => onEdit?.(selectedData)}
+                    onClick={() => handleToolbarAction('edit', onEdit)}
                     className={toolbarButton}
+                    disabled={selectedData.length === 0 && !!forms}
                 >
                     <Pencil size={16} />
                     Edit
@@ -302,6 +318,12 @@ export default function Grid({
                 )}
 
             </div>
+
+            <MasterForm
+                forms={forms}
+                formState={formState}
+                onClose={closeForm}
+            />
 
             {/* TABLE */}
             <div

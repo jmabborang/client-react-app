@@ -2,9 +2,23 @@ import { appConfig } from '../../app/config/appConfig'
 import { apiRequestFinished, apiRequestStarted } from '../../store/uiSlice'
 
 let storeDispatch = null
+let csrfToken = null
+let onUnauthorized = null
 
 export function setHttpClientStoreDispatch(dispatch) {
   storeDispatch = dispatch
+}
+
+export function setUnauthorizedHandler(handler) {
+  onUnauthorized = handler
+}
+
+export function setCsrfToken(token) {
+  csrfToken = token || null
+}
+
+export function clearCsrfToken() {
+  csrfToken = null
 }
 
 function withQueryParams(path, params) {
@@ -40,15 +54,25 @@ function withQueryParams(path, params) {
 async function request(path, options = {}) {
   storeDispatch?.(apiRequestStarted())
   try {
-    const hasBody = options.body !== undefined
+    const { headers: customHeaders, ...fetchOptions } = options
+    const hasBody = fetchOptions.body !== undefined
     const response = await fetch(`${appConfig.apiBaseUrl}${path}`, {
-      headers: { ...(hasBody ? { 'Content-Type': 'application/json' } : {}), ...(options.headers || {}) },
-      ...options,
+      ...fetchOptions,
+      credentials: 'include',
+      headers: {
+        ...(hasBody ? { 'Content-Type': 'application/json' } : {}),
+        ...(csrfToken && !['GET', 'HEAD'].includes(fetchOptions.method || 'GET') ? { 'X-CSRF-Token': csrfToken } : {}),
+        ...(customHeaders || {}),
+      },
     })
 
     const responseData = await response.json().catch(() => null)
 
     if (!response.ok) {
+      if (response.status === 401 && !path.startsWith('/api/v1/auth/')) {
+        clearCsrfToken()
+        onUnauthorized?.()
+      }
       const error = new Error(responseData?.message || `Request failed: ${response.status}`)
       error.status = response.status
       error.data = responseData
