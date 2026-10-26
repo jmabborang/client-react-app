@@ -1,9 +1,9 @@
 # Folder structure
 
-This document describes where code belongs as the React application grows. The
-project currently contains the Vite starter screen in `src/App.jsx`. Most of the
-folders below contain only `.gitkeep` placeholders; their descriptions are
-intended responsibilities, not features already implemented.
+This document describes where code belongs as the React application grows.
+`src/routes/AppRoutes.jsx` maps URLs to pages. `src/pages/views.jsx` collects
+the components under `src/pages/views/` for the router to use. Most other
+folders still contain only `.gitkeep` placeholders.
 
 ```text
 client-react-app/
@@ -41,16 +41,18 @@ client-react-app/
 
 ## How the pieces fit together
 
-`main.jsx` mounts `App.jsx`. As the application is built, `App.jsx` can compose
-providers and routing; routes select pages, and pages compose layouts and
-components. Hooks hold reusable React behavior, services handle external data,
-and utils provide general helpers.
+`main.jsx` mounts `App.jsx`, which renders the router in `routes/`. Each `.jsx`
+file under `pages/views/` must default-export a React component. `views.jsx`
+exports these components by file name (`test.jsx` becomes `views.Test`), while
+`AppRoutes.jsx` decides which URL renders each component. Hooks hold reusable
+React behavior, services handle external data, and utils provide general
+helpers.
 
 Keep state close to the component that owns it. Use `context/` for values that
 need a provider, and introduce code in `store/` when centralized state has a
 clear use. A component such as a header belongs in `components/` when reused on
 its own; a layout can compose that header with a sidebar and page content.
 
-`package.json` already defines the Vite scripts and React dependencies, and
-`vite.config.js` configures the Vite React plugin. The route and store folders
-do not imply that a routing or state management library is installed yet.
+`package.json` defines the Vite scripts and React dependencies, including
+React Router. `vite.config.js` configures the Vite React plugin. No state
+management library is installed yet.
